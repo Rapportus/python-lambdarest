@@ -9,6 +9,7 @@ import copy
 import random
 from datetime import datetime
 import time
+from werkzeug.routing import Map, Rule
 
 from lambdarest import create_lambda_handler
 
@@ -234,6 +235,23 @@ class TestLambdarestFunctions(unittest.TestCase):
         self.event["resource"] = "/bar/foo"
         result2 = self.lambda_handler(self.event, self.context)
         self.assertEqual(result2, {"body": "bar", "statusCode": 200, "headers": {}})
+
+    def test_that_url_maps_exist(self):
+        get_mock1 = mock.Mock(return_value="foo")
+        get_mock2 = mock.Mock(return_value="bar")
+
+        self.lambda_handler.handle("get", path="/path1")(get_mock1)  # decorate mock
+        self.lambda_handler.handle("post", path="/path2")(get_mock2)  # decorate mock
+
+        rule1 = Rule("/path1", endpoint=get_mock1, methods=["get"])
+        rule2 = Rule("/path2", endpoint=get_mock2, methods=["post"])
+
+        self.assertTrue(hasattr(self.lambda_handler, "url_maps"))
+        result = self.lambda_handler.url_maps
+        for actual, expected in zip(result.iter_rules(), [rule1, rule2]):
+            self.assertEqual(actual.rule, expected.rule)
+            self.assertEqual(actual.methods, expected.methods)
+            self.assertEqual(actual.endpoint.__wrapped__, expected.endpoint)
 
     def test_that_apigw_with_basepath_works(self):
         json_body = {}

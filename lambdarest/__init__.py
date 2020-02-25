@@ -313,6 +313,7 @@ def create_lambda_handler(
 
     lambda_handler = inner_lambda_handler
     lambda_handler.handle = inner_handler
+    lambda_handler.url_maps = url_maps
     return lambda_handler
 
 
